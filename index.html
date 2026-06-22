@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mes Courses">
+<meta name="theme-color" content="#ffffff">
+<title>Mes Courses</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --green:#1D9E75;--green-light:#E1F5EE;--green-mid:#5DCAA5;
+    --red:#D85A30;--red-light:#FAECE7;--red-mid:#F0997B;
+    --bg:#f8f8f6;--surface:#ffffff;--border:#e8e8e4;
+    --text:#1a1a18;--text-secondary:#6b6b67;--text-tertiary:#a8a8a4;
+    --tab-h:60px;--safe-bottom:env(safe-area-inset-bottom,0px)
+  }
+  html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);font-size:16px}
+  #app{display:flex;flex-direction:column;height:100%;max-width:600px;margin:0 auto;background:var(--surface);position:relative}
+
+  /* header */
+  .header{padding:16px 16px 0;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+  .header h1{font-size:22px;font-weight:600;letter-spacing:-0.3px;margin-bottom:12px}
+  .header h1 span{color:var(--green)}
+
+  /* tabs */
+  .tabs{display:flex;gap:0}
+  .tab{flex:1;padding:10px 4px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--text-secondary);border-bottom:2px solid transparent;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .tab i{font-size:20px}
+  .tab.active{color:var(--green);border-bottom-color:var(--green)}
+  .tab-badge{background:var(--red);color:#fff;border-radius:50px;padding:1px 6px;font-size:10px;font-weight:600;min-width:16px;display:none}
+
+  /* panels */
+  .panels{flex:1;overflow:hidden;position:relative}
+  .panel{position:absolute;inset:0;overflow-y:auto;padding:0 0 calc(20px + var(--safe-bottom));display:none;-webkit-overflow-scrolling:touch}
+  .panel.active{display:block}
+
+  /* search */
+  .search-wrap{padding:12px 16px 8px;position:sticky;top:0;background:var(--surface);z-index:10;border-bottom:1px solid var(--border)}
+  .search-wrap input{width:100%;padding:10px 14px 10px 38px;border-radius:12px;border:1px solid var(--border);background:var(--bg);font-size:15px;color:var(--text);outline:none}
+  .search-wrap input:focus{border-color:var(--green-mid)}
+  .search-icon{position:absolute;left:28px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);font-size:16px;pointer-events:none}
+
+  /* category */
+  .cat-section{padding:12px 16px 0}
+  .cat-title{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;margin-top:4px}
+  .product-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:6px}
+  .product-name{font-size:15px}
+
+  /* buttons */
+  .btn-round{width:32px;height:32px;border-radius:50%;border:1.5px solid;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:300;flex-shrink:0;transition:transform .1s}
+  .btn-round:active{transform:scale(0.9)}
+  .btn-add{color:var(--green);border-color:var(--green-mid)}
+  .btn-add:hover,.btn-add:active{background:var(--green-light)}
+  .btn-remove{color:var(--red);border-color:var(--red-mid)}
+  .btn-remove:hover,.btn-remove:active{background:var(--red-light)}
+
+  /* cart */
+  .cart-section{padding:12px 16px 0}
+  .cart-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;transition:opacity .2s}
+  .cart-item.done{opacity:.5}
+  .cart-item.done .cart-name{text-decoration:line-through;color:var(--text-tertiary)}
+  .cart-name{flex:1;font-size:15px}
+  .cart-qty{font-size:13px;color:var(--text-secondary);min-width:36px;text-align:right}
+  .cb{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .cb:checked{background:var(--green);border-color:var(--green)}
+  .cb:checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+  .section-label{font-size:12px;color:var(--text-tertiary);padding:12px 16px 4px;font-weight:500}
+  .empty{text-align:center;padding:60px 24px;color:var(--text-tertiary)}
+  .empty i{font-size:40px;display:block;margin-bottom:12px;color:var(--border)}
+  .empty p{font-size:14px;line-height:1.6}
+
+  /* recipes */
+  .form-card{margin:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .form-card h3{font-size:16px;font-weight:600;margin-bottom:14px}
+  .field{margin-bottom:10px}
+  .field label{font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px}
+  .field input,.field textarea,.field select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:15px;color:var(--text);outline:none;font-family:inherit}
+  .field input:focus,.field textarea:focus{border-color:var(--green-mid)}
+  .field textarea{resize:vertical;min-height:80px;line-height:1.5}
+  .ing-row{display:flex;gap:8px;margin-bottom:8px}
+  .ing-row input{flex:2;margin:0}
+  .ing-row input:last-of-type{flex:1}
+  .ing-row .del-btn{width:34px;height:42px;border-radius:10px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text-tertiary);font-size:16px;flex-shrink:0}
+  .btn-dashed{width:100%;padding:10px;border-radius:10px;border:1.5px dashed var(--border);background:transparent;color:var(--text-secondary);font-size:14px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-dashed:active{background:var(--bg)}
+  .btn-save{width:100%;padding:12px;border-radius:12px;background:var(--green);color:#fff;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:opacity .15s}
+  .btn-save:active{opacity:.85}
+  .recipe-card{margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .recipe-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer}
+  .recipe-head-left{flex:1}
+  .recipe-head-title{font-size:16px;font-weight:600}
+  .recipe-head-sub{font-size:13px;color:var(--text-secondary);margin-top:2px}
+  .recipe-body{border-top:1px solid var(--border);padding:14px 16px}
+  .recipe-ings{font-size:14px;line-height:2;color:var(--text-secondary)}
+  .recipe-text{font-size:14px;line-height:1.7;color:var(--text-secondary);margin-top:10px;white-space:pre-wrap;border-top:1px solid var(--border);padding-top:10px}
+  .recipe-actions{display:flex;gap:8px;margin-top:14px}
+  .btn-green{flex:1;padding:10px;border-radius:10px;background:var(--green-light);border:1px solid var(--green-mid);color:var(--green);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-green:active{opacity:.8}
+  .btn-danger{padding:10px 14px;border-radius:10px;background:var(--red-light);border:1px solid var(--red-mid);color:var(--red);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-danger:active{opacity:.8}
+  .chevron{font-size:18px;color:var(--text-tertiary);transition:transform .2s;flex-shrink:0;margin-left:8px}
+  .chevron.open{transform:rotate(180deg)}
+  .recipes-list-title{font-size:13px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.6px;padding:16px 16px 8px}
+
+  /* toast */
+  .toast{position:fixed;bottom:calc(var(--tab-h) + 16px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a18;color:#fff;padding:10px 18px;border-radius:50px;font-size:14px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:100;max-width:calc(100vw - 32px);text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* bottom tab bar */
+  .tab-bar{display:flex;background:var(--surface);border-top:1px solid var(--border);height:calc(var(--tab-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);flex-shrink:0}
+
+  /* icon font */
+  @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css');
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <h1>Mes <span>Courses</span></h1>
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" onclick="showTab('courses',this)">
+        <i class="ti ti-shopping-cart"></i>Liste
+        <span class="tab-badge" id="cart-badge"></span>
+      </button>
+      <button class="tab" role="tab" aria-selected="false" onclick="showTab('produits',this)">
+        <i class="ti ti-package"></i>Produits
+      </button>
+      <button class="tab" role="tab" aria-selected="false" onclick="showTab('recettes',this)">
+        <i class="ti ti-chef-hat"></i>Recettes
+      </button>
+    </div>
+  </div>
+
+  <div class="panels">
+    <!-- COURSES -->
+    <div class="panel active" id="panel-courses">
+      <div id="cart-content"></div>
+    </div>
+
+    <!-- PRODUITS -->
+    <div class="panel" id="panel-produits">
+      <div class="search-wrap" style="position:sticky;top:0">
+        <i class="ti ti-search search-icon"></i>
+        <input type="search" id="search-input" placeholder="Rechercher un produit..." oninput="renderProducts()" autocomplete="off">
+      </div>
+      <div id="products-content"></div>
+    </div>
+
+    <!-- RECETTES -->
+    <div class="panel" id="panel-recettes">
+      <div class="form-card">
+        <h3>Nouvelle recette</h3>
+        <div class="field">
+          <label>Nom de la recette</label>
+          <input type="text" id="r-name" placeholder="Ex: Poulet rôti aux herbes">
+        </div>
+        <div class="field">
+          <label>Ingrédients</label>
+          <div id="r-ings"></div>
+          <button class="btn-dashed" onclick="addIngRow()">
+            <i class="ti ti-plus"></i> Ajouter un ingrédient
+          </button>
+        </div>
+        <div class="field">
+          <label>Étapes de la recette <span style="color:var(--text-tertiary);font-weight:400">(facultatif)</span></label>
+          <textarea id="r-text" placeholder="Décrivez les étapes..."></textarea>
+        </div>
+        <button class="btn-save" onclick="saveRecipe()">Enregistrer la recette</button>
+      </div>
+      <div class="recipes-list-title">Mes recettes</div>
+      <div id="recipes-content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<datalist id="prod-datalist"></datalist>
+
+<script>
+const CATEGORIES = {
+  "Fruits & légumes":["Pomme","Banane","Tomate","Salade","Carotte","Courgette","Oignon","Ail","Poivron","Citron","Orange","Poireau","Épinards","Champignons","Pomme de terre","Brocoli","Concombre","Radis","Céleri","Avocat"],
+  "Viandes & poissons":["Poulet","Bœuf haché","Saumon","Thon","Jambon","Lardons","Crevettes","Sardines","Côte de porc","Steak","Dinde","Cabillaud","Merlan","Escalope de veau"],
+  "Produits laitiers":["Lait","Beurre","Yaourt","Fromage","Crème fraîche","Œufs","Gruyère","Mozzarella","Parmesan","Crème liquide","Fromage blanc","Comté"],
+  "Épicerie":["Pâtes","Riz","Farine","Sucre","Sel","Poivre","Huile d'olive","Vinaigre","Moutarde","Ketchup","Sauce tomate","Bouillon cube","Lentilles","Pois chiches","Haricots rouges","Maïs","Thon en boîte","Chocolat noir","Miel","Confiture"],
+  "Boulangerie":["Pain","Baguette","Biscottes","Pain de mie","Croissant","Pain complet","Brioche"],
+  "Boissons":["Eau plate","Eau gazeuse","Jus d'orange","Café","Thé","Lait de soja","Coca-Cola","Jus de pomme","Bière","Vin rouge"],
+  "Surgelés":["Pizza surgelée","Frites","Légumes surgelés","Glace","Nuggets","Poisson pané"],
+  "Hygiène":["Savon","Shampooing","Dentifrice","Papier toilette","Gel douche","Déodorant","Coton"],
+  "Entretien":["Liquide vaisselle","Lessive","Éponge","Sacs poubelle","Nettoyant multi-usage"]
+};
+
+let cart = JSON.parse(localStorage.getItem('cart')||'{}');
+let recipes = JSON.parse(localStorage.getItem('recipes')||'[]');
+let openRecipes = new Set();
+
+function save(){
+  localStorage.setItem('cart', JSON.stringify(cart));
+  localStorage.setItem('recipes', JSON.stringify(recipes));
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+function showTab(name, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
+  if(name==='courses') renderCart();
+  if(name==='produits') renderProducts();
+  if(name==='recettes') renderRecipes();
+}
+
+function addToCart(name, qty=1){
+  if(cart[name]) cart[name].qty = (cart[name].qty||1) + qty;
+  else cart[name] = {qty, done:false};
+  save(); updateBadge(); renderCart();
+}
+
+function removeFromCart(name){
+  delete cart[name];
+  save(); updateBadge(); renderCart();
+}
+
+function toggleDone(name, val){
+  if(cart[name]) cart[name].done = val;
+  save(); renderCart();
+}
+
+function updateBadge(){
+  const keys = Object.keys(cart);
+  const el = document.getElementById('cart-badge');
+  if(keys.length){el.style.display='inline-block';el.textContent=keys.length;}
+  else el.style.display='none';
+}
+
+function renderCart(){
+  const el = document.getElementById('cart-content');
+  const keys = Object.keys(cart);
+  if(!keys.length){
+    el.innerHTML=`<div class="empty"><i class="ti ti-shopping-cart"></i><p>Votre liste est vide.<br>Ajoutez des produits depuis l'onglet Produits ou en ajoutant une recette.</p></div>`;
+    return;
+  }
+  const pending = keys.filter(k=>!cart[k].done);
+  const done = keys.filter(k=>cart[k].done);
+  let html='';
+  if(pending.length){
+    html+=`<div class="cart-section">`;
+    pending.forEach(k=>{
+      const q = cart[k].qty;
+      html+=`<div class="cart-item">
+        <input type="checkbox" class="cb" onchange="toggleDone('${esc(k)}',this.checked)">
+        <span class="cart-name">${k}</span>
+        <span class="cart-qty">${q>1?'× '+q:''}</span>
+        <button class="btn-round btn-remove" onclick="removeFromCart('${esc(k)}')" aria-label="Retirer ${k}"><i class="ti ti-minus"></i></button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  if(done.length){
+    html+=`<div class="section-label">${done.length} article${done.length>1?'s':''} acheté${done.length>1?'s':''}</div><div class="cart-section">`;
+    done.forEach(k=>{
+      const q = cart[k].qty;
+      html+=`<div class="cart-item done">
+        <input type="checkbox" class="cb" checked onchange="toggleDone('${esc(k)}',this.checked)">
+        <span class="cart-name">${k}</span>
+        <span class="cart-qty">${q>1?'× '+q:''}</span>
+        <button class="btn-round btn-remove" onclick="removeFromCart('${esc(k)}')" aria-label="Retirer ${k}"><i class="ti ti-minus"></i></button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  el.innerHTML=html;
+}
+
+function renderProducts(){
+  const q=(document.getElementById('search-input')||{}).value||'';
+  const el=document.getElementById('products-content');
+  let html='';
+  Object.entries(CATEGORIES).forEach(([cat,prods])=>{
+    const filtered=prods.filter(p=>p.toLowerCase().includes(q.toLowerCase()));
+    if(!filtered.length) return;
+    html+=`<div class="cat-section"><div class="cat-title">${cat}</div>`;
+    filtered.forEach(p=>{
+      html+=`<div class="product-row"><span class="product-name">${p}</span><button class="btn-round btn-add" onclick="addToCart('${esc(p)}');showToast('${p} ajouté ✓')" aria-label="Ajouter ${p}"><i class="ti ti-plus"></i></button></div>`;
+    });
+    html+=`</div>`;
+  });
+  if(!html) html=`<div class="empty"><i class="ti ti-search"></i><p>Aucun produit trouvé.</p></div>`;
+  el.innerHTML=html;
+}
+
+let ingCount=0;
+function addIngRow(){
+  ingCount++;
+  const id=ingCount;
+  const row=document.createElement('div');
+  row.className='ing-row';
+  row.id='ing-'+id;
+  row.innerHTML=`<input type="text" placeholder="Produit" list="prod-datalist" style="flex:2;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:15px;color:var(--text);outline:none"><input type="text" placeholder="Quantité" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:15px;color:var(--text);outline:none"><button class="del-btn" onclick="document.getElementById('ing-${id}').remove()" aria-label="Supprimer"><i class="ti ti-x"></i></button>`;
+  document.getElementById('r-ings').appendChild(row);
+  buildDatalist();
+}
+
+function buildDatalist(){
+  const dl=document.getElementById('prod-datalist');
+  if(dl.children.length) return;
+  Object.values(CATEGORIES).flat().forEach(p=>{const o=document.createElement('option');o.value=p;dl.appendChild(o);});
+}
+
+function saveRecipe(){
+  const name=document.getElementById('r-name').value.trim();
+  if(!name){showToast('Donnez un nom à la recette');return;}
+  const ings=[];
+  document.querySelectorAll('#r-ings .ing-row').forEach(row=>{
+    const inputs=row.querySelectorAll('input');
+    const prod=inputs[0].value.trim(), qty=inputs[1].value.trim();
+    if(prod) ings.push({name:prod, qty:qty||'1'});
+  });
+  if(!ings.length){showToast('Ajoutez au moins un ingrédient');return;}
+  const text=document.getElementById('r-text').value.trim();
+  recipes.push({id:Date.now(), name, ings, text});
+  save();
+  document.getElementById('r-name').value='';
+  document.getElementById('r-ings').innerHTML='';
+  document.getElementById('r-text').value='';
+  showToast('Recette enregistrée ✓');
+  renderRecipes();
+}
+
+function addRecipeToCart(id){
+  const r=recipes.find(r=>r.id===id);
+  if(!r) return;
+  r.ings.forEach(ing=>{const q=parseInt(ing.qty)||1; addToCart(ing.name,q);});
+  showToast(`Ingrédients de "${r.name}" ajoutés ✓`);
+}
+
+function deleteRecipe(id){
+  if(!confirm('Supprimer cette recette ?')) return;
+  recipes=recipes.filter(r=>r.id!==id);
+  openRecipes.delete(id);
+  save(); renderRecipes();
+}
+
+function toggleRecipe(id){
+  if(openRecipes.has(id)) openRecipes.delete(id);
+  else openRecipes.add(id);
+  renderRecipes();
+}
+
+function renderRecipes(){
+  const el=document.getElementById('recipes-content');
+  if(!recipes.length){
+    el.innerHTML=`<div class="empty"><i class="ti ti-chef-hat"></i><p>Aucune recette encore.<br>Créez votre première recette ci-dessus.</p></div>`;
+    return;
+  }
+  let html='';
+  recipes.forEach(r=>{
+    const open=openRecipes.has(r.id);
+    html+=`<div class="recipe-card">
+      <div class="recipe-head" onclick="toggleRecipe(${r.id})">
+        <div class="recipe-head-left">
+          <div class="recipe-head-title">${r.name}</div>
+          <div class="recipe-head-sub">${r.ings.length} ingrédient${r.ings.length>1?'s':''}</div>
+        </div>
+        <i class="ti ti-chevron-down chevron ${open?'open':''}"></i>
+      </div>`;
+    if(open){
+      html+=`<div class="recipe-body">
+        <div class="recipe-ings">${r.ings.map(i=>`<b>${i.name}</b> <span style="color:var(--text-tertiary)">${i.qty}</span>`).join('&nbsp; · &nbsp;')}</div>
+        ${r.text?`<div class="recipe-text">${r.text}</div>`:''}
+        <div class="recipe-actions">
+          <button class="btn-green" onclick="addRecipeToCart(${r.id})"><i class="ti ti-shopping-cart"></i> Ajouter à la liste</button>
+          <button class="btn-danger" onclick="deleteRecipe(${r.id})"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+
+function esc(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+
+updateBadge();
+renderCart();
+renderProducts();
+renderRecipes();
+</script>
+</body>
+</html>
